@@ -30,6 +30,7 @@ jobs:
                 fi
             }
             ensure_var RUSTINFRA_DEPLOY_DIR
+            mkdir -p $RUSTINFRA_DEPLOY_DIR
             if ! [[ -z "${RUSTINFRA_CLOUDFRONT_DISTRIBUTION+x}" ]]; then
                 ensure_var AWS_ACCESS_KEY_ID
                 ensure_var AWS_SECRET_ACCESS_KEY
