@@ -14,7 +14,8 @@ jobs:
       - name: Cache
         uses: actions/cache@v2.1.1
         with:
-          path: cargo
+          path: ~/.cargo
+          key: ${{ runner.os }}-build-${{ env.cache-name }}
 
       - name: Install
         run: cargo install --version "^0.3" mdbook
