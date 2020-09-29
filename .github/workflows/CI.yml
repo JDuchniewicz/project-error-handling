@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Cache
+        uses: actions/cache@v2.1.1
+        with:
+          path: cargo
+
+      - name: Install
+        run: cargo install --version "^0.3" mdbook
+
+      - name: Before Deploy
+        run: |
+            ensure_var() {
+                var="$1"
+                if [[ -z "${!var+x}" ]]; then
+                    echo "Environment variable $var is not set!"
+                    return 1
+                fi
+            }
+            ensure_var RUSTINFRA_DEPLOY_DIR
+            if ! [[ -z "${RUSTINFRA_CLOUDFRONT_DISTRIBUTION+x}" ]]; then
+                ensure_var AWS_ACCESS_KEY_ID
+                ensure_var AWS_SECRET_ACCESS_KEY
+            fi
+            if ! [[ -z "${RUSTINFRA_CLOUDFRONT_DISTRIBUTION+x}" ]]; then
+                pip install --user awscli; export PATH=$PATH:$HOME/.local/bin
+            fi
+            touch $RUSTINFRA_DEPLOY_DIR/.nojekyll
+        env:
+          RUSTINFRA_DEPLOY_DIR: book
+ 
+      - name: Deploy
+        run: |
+            mdbook build && mdbook test
+            curl -LsSf https://raw.githubusercontent.com/rust-lang/simpleinfra/master/setup-deploy-keys/src/deploy.rs | rustc - -o /tmp/deploy && (cd $RUSTINFRA_DEPLOY_DIR && /tmp/deploy)
+      
+      - name: After Deploy
+        run: |
+            if ! [[ -z "${RUSTINFRA_CLOUDFRONT_DISTRIBUTION+x}" ]]; then
+                aws cloudfront create-invalidation --distribution-id $RUSTINFRA_CLOUDFRONT_DISTRIBUTION --paths "/*"
+            fi
+        
