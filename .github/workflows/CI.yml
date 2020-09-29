@@ -13,6 +13,8 @@ jobs:
       
       - name: Cache
         uses: actions/cache@v2.1.1
+        env:
+          cache-name: cargo
         with:
           path: ~/.cargo
           key: ${{ runner.os }}-build-${{ env.cache-name }}
@@ -44,8 +46,8 @@ jobs:
  
       - name: Deploy
         run: |
-            mdbook build && mdbook test
             curl -LsSf https://raw.githubusercontent.com/rust-lang/simpleinfra/master/setup-deploy-keys/src/deploy.rs | rustc - -o /tmp/deploy && (cd $RUSTINFRA_DEPLOY_DIR && /tmp/deploy)
+            mdbook build && mdbook test
       
       - name: After Deploy
         run: |
